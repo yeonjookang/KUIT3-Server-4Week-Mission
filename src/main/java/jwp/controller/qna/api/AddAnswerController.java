@@ -3,7 +3,9 @@ package jwp.controller.qna.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import core.db.MemoryAnswerRepository;
 import core.db.MemoryQuestionRepository;
+import core.mvc.AbstractController;
 import core.mvc.Controller;
+import core.mvc.modelandview.ModelAndView;
 import core.mvc.view.JsonView;
 import core.mvc.view.View;
 import jwp.model.Answer;
@@ -13,23 +15,25 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Map;
 
-public class AddAnswerController implements Controller {
+public class AddAnswerController extends AbstractController {
     private final MemoryAnswerRepository answerRepository = MemoryAnswerRepository.getInstance();
     private final MemoryQuestionRepository questionRepository = MemoryQuestionRepository.getInstance();
     @Override
-    public View execute(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Answer answer = new Answer(Long.parseLong(req.getParameter("questionId")),
-                req.getParameter("author"),
-                req.getParameter("contents"));
+    public ModelAndView execute(Map<String,String> params) throws IOException {
+        Answer answer = new Answer(Long.parseLong(params.get("questionId")),
+                params.get("author"),
+                params.get("contents"));
         Answer savedAnswer = answerRepository.insert(answer);
 
         Question question = questionRepository.findQuestionById(answer.getQuestionId());
         question.increaseCountOfAnswer();
         questionRepository.update(question);
 
-        req.setAttribute("answer",savedAnswer);
+        ModelAndView mv = jsonView();
+        mv.addModel("answer",savedAnswer);
 
-        return new JsonView();
+        return mv;
     }
 }

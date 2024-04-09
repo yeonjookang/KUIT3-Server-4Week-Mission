@@ -1,5 +1,6 @@
 package core.mvc;
 
+import core.mvc.modelandview.ModelAndView;
 import core.mvc.view.View;
 
 import javax.servlet.RequestDispatcher;
@@ -9,6 +10,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @WebServlet(name = "dispatcher", urlPatterns = "/", loadOnStartup = 1)
 public class DispatcherServlet extends HttpServlet {
@@ -24,12 +27,20 @@ public class DispatcherServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Controller controller = requestMapping.getController(req);
+        controller.setSession(req.getSession());
         try {
-            View view = controller.execute(req, resp);
-            if(view == null) return;
-            view.render(req,resp);
+            ModelAndView mv = controller.execute(createParams(req));
+            if(mv == null) return;
+            mv.render(req,resp);
         } catch (Throwable e) {
             throw new ServletException(e.getMessage());
         }
+    }
+
+    private Map<String, String> createParams(HttpServletRequest request){
+        Map<String, String> params = new HashMap<>();
+        request.getParameterNames().asIterator().forEachRemaining(paramName ->
+                params.put(paramName, request.getParameter(paramName)));
+        return params;
     }
 }
